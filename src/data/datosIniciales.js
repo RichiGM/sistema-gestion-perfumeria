@@ -24,6 +24,16 @@ export const productosIniciales = [
   { id: 10, codigo: "PRF-004", nombre: "Body Mist Flor de Loto", categoria: "Perfumes", precio: 260, costo: 135, stock: 3, stockMinimo: 5 },
 ];
 
+// Fotos locales (carpeta public/img) que se muestran en el punto de venta.
+const IMAGENES_CATEGORIA = {
+  Perfumes: "/img/perfumes.jpg",
+  Cremas: "/img/cremas.jpg",
+  Maquillaje: "/img/maquillaje.jpg",
+  "Cuidado capilar": "/img/cuidado-capilar.jpg",
+};
+
+export const imagenDeCategoria = (categoria) => IMAGENES_CATEGORIA[categoria] || "/icons/icon-512.svg";
+
 const haceDias = (dias, hora) => {
   const fecha = new Date();
   fecha.setDate(fecha.getDate() - dias);

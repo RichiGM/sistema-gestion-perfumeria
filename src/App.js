@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import Login from "./components/Login.js";
-import BarraLateral from "./components/BarraLateral.js";
 import Encabezado from "./components/Encabezado.js";
 import { Notificaciones } from "./components/Comunes.js";
 import Inventario from "./modules/Inventario.js";
@@ -9,12 +8,13 @@ import Compras from "./modules/Compras.js";
 import Ventas from "./modules/Ventas.js";
 import { comprasIniciales, productosIniciales, proveedores, ventasIniciales } from "./data/datosIniciales.js";
 import { borrarDatos, useEstadoPersistente } from "./services/almacenamiento.js";
+import { consultarPendientes, enviarOperacion, escucharServiceWorker, sincronizarAhora } from "./services/sincronizacion.js";
 import { calcularTotales, generarFolio, restar, sumar } from "./utils/calculos.js";
 
 const MODULOS = [
-  { id: "inventario", titulo: "Inventario", descripcion: "Existencias, precios y alertas de stock", icono: "inventario" },
-  { id: "compras", titulo: "Compras", descripcion: "Órdenes de compra a proveedores", icono: "compras" },
-  { id: "ventas", titulo: "Ventas", descripcion: "Punto de venta e historial de ventas", icono: "ventas" },
+  { id: "inventario", titulo: "Inventario", descripcion: "Existencias, precios y alertas de stock" },
+  { id: "compras", titulo: "Compras", descripcion: "Órdenes de compra a proveedores" },
+  { id: "ventas", titulo: "Ventas", descripcion: "Punto de venta e historial de ventas" },
 ];
 
 const CLAVES_DATOS = ["productos", "compras", "ventas"];
@@ -29,6 +29,7 @@ function Aplicacion() {
   const [moduloActivo, setModuloActivo] = useState("inventario");
   const [notificaciones, setNotificaciones] = useState([]);
   const [eventoInstalacion, setEventoInstalacion] = useState(null);
+  const [pendientes, setPendientes] = useState(0);
 
   useEffect(() => {
     const guardarEvento = (evento) => {
@@ -39,6 +40,29 @@ function Aplicacion() {
     return () => window.removeEventListener("beforeinstallprompt", guardarEvento);
   }, []);
 
+  // Mensajes del Service Worker: cuántas operaciones faltan por enviar y
+  // aviso cuando ya se mandaron las que se guardaron sin conexión.
+  useEffect(() => {
+    const dejarDeEscuchar = escucharServiceWorker(({ tipo, cantidad, enviadas }) => {
+      if (tipo === "pendientes") setPendientes(cantidad);
+      if (tipo === "sincronizado") {
+        setPendientes(cantidad);
+        notificar(`Conexión restablecida: se enviaron ${enviadas} operación(es) pendientes`);
+      }
+    });
+
+    const alConectarse = () => sincronizarAhora();
+    window.addEventListener("online", alConectarse);
+
+    consultarPendientes();
+    if (navigator.onLine) sincronizarAhora();
+
+    return () => {
+      dejarDeEscuchar();
+      window.removeEventListener("online", alConectarse);
+    };
+  }, []);
+
   const cerrarNotificacion = (id) => {
     setNotificaciones((previas) => previas.filter((notificacion) => notificacion.id !== id));
   };
@@ -47,6 +71,15 @@ function Aplicacion() {
     const id = Date.now() + Math.random();
     setNotificaciones((previas) => [...previas, { id, mensaje, tipo }]);
     setTimeout(() => cerrarNotificacion(id), 3500);
+  };
+
+  // Manda la operación al servidor. Si no hay internet queda en la cola del
+  // Service Worker y se envía sola al volver la conexión.
+  const respaldar = (tipo, datos) => {
+    enviarOperacion(tipo, datos).then(({ pendiente, error }) => {
+      if (pendiente) notificar("Sin conexión: se guardó y se enviará al volver el internet", "aviso");
+      if (error) notificar("No se pudo enviar al servidor", "error");
+    });
   };
 
   const iniciarSesion = (datosUsuario) => {
@@ -60,17 +93,20 @@ function Aplicacion() {
   const guardarProducto = (producto) => {
     if (producto.id) {
       setProductos((previos) => previos.map((item) => (item.id === producto.id ? producto : item)));
+      respaldar("producto-editado", producto);
       notificar(`Se actualizó "${producto.nombre}"`);
       return;
     }
     const id = siguienteId(productos);
     const codigo = producto.codigo.trim() || `PRD-${String(id).padStart(3, "0")}`;
     setProductos((previos) => [...previos, { ...producto, id, codigo }]);
+    respaldar("producto-nuevo", { ...producto, id, codigo });
     notificar(`Se agregó "${producto.nombre}" al inventario`);
   };
 
   const eliminarProducto = (id) => {
     setProductos((previos) => previos.filter((producto) => producto.id !== id));
+    respaldar("producto-eliminado", { id });
     notificar("Producto eliminado");
   };
 
@@ -88,6 +124,7 @@ function Aplicacion() {
     };
 
     setCompras((previas) => [compra, ...previas]);
+    respaldar("compra", compra);
     setProductos((previos) =>
       previos.map((producto) => {
         const partida = partidas.find(({ productoId }) => productoId === producto.id);
@@ -114,6 +151,7 @@ function Aplicacion() {
     };
 
     setVentas((previas) => [venta, ...previas]);
+    respaldar("venta", venta);
     setProductos((previos) =>
       previos.map((producto) => {
         const partida = partidas.find(({ productoId }) => productoId === producto.id);
@@ -151,16 +189,20 @@ function Aplicacion() {
 
   return (
     <div className="aplicacion">
-      <BarraLateral
+      <Encabezado
         modulos={MODULOS}
         moduloActivo={moduloActivo}
         onCambiar={setModuloActivo}
-        onRestablecer={restablecerDatos}
-        onInstalar={eventoInstalacion ? instalarAplicacion : null}
+        sesion={sesion}
+        onCerrarSesion={cerrarSesion}
+        pendientes={pendientes}
       />
 
       <main className="contenido">
-        <Encabezado modulo={modulo} sesion={sesion} onCerrarSesion={cerrarSesion} />
+        <div className="titulo-modulo">
+          <h1>{modulo.titulo}</h1>
+          <p className="texto-suave">{modulo.descripcion}</p>
+        </div>
 
         {moduloActivo === "inventario" && (
           <Inventario productos={productos} onGuardar={guardarProducto} onEliminar={eliminarProducto} />
@@ -177,6 +219,13 @@ function Aplicacion() {
         {moduloActivo === "ventas" && (
           <Ventas productos={productos} ventas={ventas} onRegistrar={registrarVenta} notificar={notificar} />
         )}
+
+        <footer className="pie">
+          {eventoInstalacion && (
+            <button className="enlace" onClick={instalarAplicacion}>Instalar aplicación</button>
+          )}
+          <button className="enlace" onClick={restablecerDatos}>Restablecer datos de ejemplo</button>
+        </footer>
       </main>
 
       <Notificaciones lista={notificaciones} onCerrar={cerrarNotificacion} />

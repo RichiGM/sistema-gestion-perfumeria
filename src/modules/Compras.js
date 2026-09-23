@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Icono from "../components/Icono.js";
 import { Indicador, Pestanas, Vacio } from "../components/Comunes.js";
 import { procesarOperacion } from "../services/almacenamiento.js";
 import { calcularTotales, formatearFecha, formatearMoneda, multiplicar, sumar } from "../utils/calculos.js";
@@ -91,10 +90,10 @@ function Compras({ productos, proveedores, compras, onRegistrar, notificar }) {
   return (
     <div className="modulo">
       <div className="indicadores">
-        <Indicador icono="recibo" titulo="Compras registradas" valor={compras.length} />
-        <Indicador icono="dinero" titulo="Total invertido" valor={formatearMoneda(totalInvertido)} detalle="IVA incluido" tono="verde" />
-        <Indicador icono="caja" titulo="Unidades compradas" valor={unidadesCompradas} tono="azul" />
-        <Indicador icono="camion" titulo="Proveedor frecuente" valor={obtenerProveedorFrecuente(compras)} tono="ambar" compacto />
+        <Indicador titulo="Compras registradas" valor={compras.length} />
+        <Indicador titulo="Total invertido" valor={formatearMoneda(totalInvertido)} detalle="IVA incluido" />
+        <Indicador titulo="Unidades compradas" valor={unidadesCompradas} />
+        <Indicador titulo="Proveedor frecuente" valor={obtenerProveedorFrecuente(compras)} />
       </div>
 
       <Pestanas opciones={PESTANAS} activa={pestana} onCambiar={setPestana} />
@@ -132,15 +131,15 @@ function Compras({ productos, proveedores, compras, onRegistrar, notificar }) {
                 <input type="number" min="0" step="0.01" value={costo} onChange={(evento) => setCosto(evento.target.value)} placeholder="0.00" />
               </label>
               <button type="submit" className="boton boton--secundario">
-                <Icono nombre="mas" tamano={18} /> Agregar
+                Agregar
               </button>
             </form>
           </section>
 
-          <section className="tarjeta resumen">
+          <section className="tarjeta">
             <h3 className="tarjeta__titulo">Orden de compra</h3>
             {partidas.length === 0 ? (
-              <Vacio icono="compras" titulo="Sin productos" texto="Agrega productos para armar la orden." />
+              <Vacio titulo="Sin productos" texto="Agrega productos para armar la orden." />
             ) : (
               <ul className="lista-partidas">
                 {partidas.map(({ productoId: id, nombre, cantidad: unidades, precio }) => (
@@ -150,8 +149,8 @@ function Compras({ productos, proveedores, compras, onRegistrar, notificar }) {
                       <small className="texto-suave bloque">{unidades} × {formatearMoneda(precio)}</small>
                     </div>
                     <span>{formatearMoneda(multiplicar(unidades, precio))}</span>
-                    <button className="boton-icono boton-icono--peligro" onClick={() => quitarPartida(id)} aria-label="Quitar">
-                      <Icono nombre="eliminar" tamano={16} />
+                    <button className="boton-chico boton-chico--peligro" onClick={() => quitarPartida(id)}>
+                      Quitar
                     </button>
                   </li>
                 ))}
@@ -165,18 +164,18 @@ function Compras({ productos, proveedores, compras, onRegistrar, notificar }) {
             </dl>
 
             <button
-              className="boton boton--primario boton--bloque"
+              className="boton boton--bloque"
               onClick={registrarCompra}
               disabled={procesando || partidas.length === 0}
             >
-              {procesando ? <><span className="spinner" /> Registrando compra...</> : "Registrar compra"}
+              {procesando ? "Registrando compra..." : "Registrar compra"}
             </button>
           </section>
         </div>
       ) : (
         <section className="tarjeta">
           {compras.length === 0 ? (
-            <Vacio icono="recibo" titulo="Aún no hay compras" />
+            <Vacio titulo="Aún no hay compras" />
           ) : (
             <div className="tabla-contenedor">
               <table className="tabla">
@@ -192,7 +191,7 @@ function Compras({ productos, proveedores, compras, onRegistrar, notificar }) {
                 <tbody>
                   {compras.map(({ id, folio, fecha, proveedor, partidas: detalle, total: importe }) => (
                     <tr key={id}>
-                      <td><span className="etiqueta etiqueta--morado">{folio}</span></td>
+                      <td className="nowrap">{folio}</td>
                       <td className="nowrap">{formatearFecha(fecha)}</td>
                       <td>{proveedor}</td>
                       <td className="texto-suave">{detalle.map(({ nombre, cantidad: unidades }) => `${unidades}× ${nombre}`).join(", ")}</td>

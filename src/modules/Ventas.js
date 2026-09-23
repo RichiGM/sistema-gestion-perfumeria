@@ -1,7 +1,7 @@
 import { useState } from "react";
-import Icono from "../components/Icono.js";
 import { Indicador, Pestanas, Vacio } from "../components/Comunes.js";
 import { procesarOperacion } from "../services/almacenamiento.js";
+import { imagenDeCategoria } from "../data/datosIniciales.js";
 import {
   calcularIVA,
   calcularTotales,
@@ -113,36 +113,41 @@ function Ventas({ productos, ventas, onRegistrar, notificar }) {
   return (
     <div className="modulo">
       <div className="indicadores">
-        <Indicador icono="recibo" titulo="Ventas de hoy" valor={ventasHoy.length} detalle={`${ventas.length} en total`} />
-        <Indicador icono="dinero" titulo="Ingresos de hoy" valor={formatearMoneda(ingresosHoy)} detalle="IVA incluido" tono="verde" />
-        <Indicador icono="ventas" titulo="Ingresos totales" valor={formatearMoneda(ingresosTotales)} tono="azul" />
-        <Indicador icono="compras" titulo="Ticket promedio" valor={formatearMoneda(ticketPromedio)} tono="ambar" />
+        <Indicador titulo="Ventas de hoy" valor={ventasHoy.length} detalle={`${ventas.length} en total`} />
+        <Indicador titulo="Ingresos de hoy" valor={formatearMoneda(ingresosHoy)} detalle="IVA incluido" />
+        <Indicador titulo="Ingresos totales" valor={formatearMoneda(ingresosTotales)} />
+        <Indicador titulo="Ticket promedio" valor={formatearMoneda(ticketPromedio)} />
       </div>
 
       <Pestanas opciones={PESTANAS} activa={pestana} onCambiar={setPestana} />
 
       {pestana === "nueva" ? (
-        <div className="dos-columnas dos-columnas--pos">
+        <div className="dos-columnas">
           <section className="tarjeta">
-            <div className="buscador buscador--completo">
-              <Icono nombre="buscar" tamano={18} />
-              <input value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} placeholder="Buscar producto o categoría..." />
-            </div>
+            <input
+              className="buscador"
+              value={busqueda}
+              onChange={(evento) => setBusqueda(evento.target.value)}
+              placeholder="Buscar producto o categoría..."
+            />
 
             {productosVisibles.length === 0 ? (
-              <Vacio icono="buscar" titulo="Sin resultados" />
+              <Vacio titulo="Sin resultados" />
             ) : (
               <div className="catalogo">
                 {productosVisibles.map((producto) => {
                   const { id, nombre, categoria, precio, stock } = producto;
                   return (
                     <button key={id} className="producto" onClick={() => agregarAlCarrito(producto)} disabled={stock === 0}>
-                      <span className="producto__categoria">{categoria}</span>
-                      <strong className="producto__nombre">{nombre}</strong>
-                      <span className="producto__precio">{formatearMoneda(sumar(precio, calcularIVA(precio)))} <small className="texto-suave">IVA incl.</small></span>
-                      <small className={stock === 0 ? "texto-rojo" : "texto-suave"}>
-                        {stock === 0 ? "Agotado" : `${stock} disponibles`}
-                      </small>
+                      <img src={imagenDeCategoria(categoria)} alt="" loading="lazy" />
+                      <span className="producto__info">
+                        <span className="producto__categoria">{categoria}</span>
+                        <strong className="producto__nombre">{nombre}</strong>
+                        <span className="producto__precio">{formatearMoneda(sumar(precio, calcularIVA(precio)))}</span>
+                        <small className={stock === 0 ? "texto-rojo" : "texto-suave"}>
+                          {stock === 0 ? "Agotado" : `${stock} disponibles`}
+                        </small>
+                      </span>
                     </button>
                   );
                 })}
@@ -150,16 +155,11 @@ function Ventas({ productos, ventas, onRegistrar, notificar }) {
             )}
           </section>
 
-          <section className="tarjeta resumen">
-            <div className="resumen__cabecera">
-              <h3 className="tarjeta__titulo">Venta actual</h3>
-              {carrito.length > 0 && (
-                <button className="enlace" onClick={limpiarVenta}>Vaciar</button>
-              )}
-            </div>
+          <section className="tarjeta">
+            <h3 className="tarjeta__titulo">Venta actual</h3>
 
             {carrito.length === 0 ? (
-              <Vacio icono="compras" titulo="Carrito vacío" texto="Toca un producto para agregarlo." />
+              <Vacio titulo="Carrito vacío" texto="Toca un producto para agregarlo." />
             ) : (
               <ul className="lista-partidas">
                 {carrito.map(({ productoId, nombre, precio, cantidad }) => (
@@ -169,9 +169,9 @@ function Ventas({ productos, ventas, onRegistrar, notificar }) {
                       <small className="texto-suave bloque">{formatearMoneda(precio)} c/u + IVA</small>
                     </div>
                     <div className="contador">
-                      <button onClick={() => cambiarCantidad(productoId, -1)} aria-label="Quitar uno"><Icono nombre="menos" tamano={14} /></button>
+                      <button onClick={() => cambiarCantidad(productoId, -1)} aria-label="Quitar uno">−</button>
                       <span>{cantidad}</span>
-                      <button onClick={() => cambiarCantidad(productoId, 1)} aria-label="Agregar uno"><Icono nombre="mas" tamano={14} /></button>
+                      <button onClick={() => cambiarCantidad(productoId, 1)} aria-label="Agregar uno">+</button>
                     </div>
                     <span className="nowrap">{formatearMoneda(multiplicar(precio, cantidad))}</span>
                   </li>
@@ -207,15 +207,18 @@ function Ventas({ productos, ventas, onRegistrar, notificar }) {
               <div className="totales__final"><dt>Total a cobrar</dt><dd>{formatearMoneda(total)}</dd></div>
             </dl>
 
-            <button className="boton boton--primario boton--bloque" onClick={cobrar} disabled={procesando || carrito.length === 0}>
-              {procesando ? <><span className="spinner" /> Procesando pago...</> : `Cobrar ${formatearMoneda(total)}`}
+            <button className="boton boton--bloque" onClick={cobrar} disabled={procesando || carrito.length === 0}>
+              {procesando ? "Procesando pago..." : `Cobrar ${formatearMoneda(total)}`}
             </button>
+            {carrito.length > 0 && (
+              <button className="enlace" onClick={limpiarVenta}>Cancelar venta</button>
+            )}
           </section>
         </div>
       ) : (
         <section className="tarjeta">
           {ventas.length === 0 ? (
-            <Vacio icono="recibo" titulo="Aún no hay ventas" />
+            <Vacio titulo="Aún no hay ventas" />
           ) : (
             <div className="tabla-contenedor">
               <table className="tabla">
@@ -233,7 +236,7 @@ function Ventas({ productos, ventas, onRegistrar, notificar }) {
                 <tbody>
                   {ventas.map(({ id, folio, fecha, cliente: nombreCliente, metodoPago: pago, partidas, descuento: porcentaje, subtotal: bruto, montoDescuento: ahorro, total: importe }) => (
                     <tr key={id}>
-                      <td><span className="etiqueta etiqueta--morado">{folio}</span></td>
+                      <td className="nowrap">{folio}</td>
                       <td className="nowrap">{formatearFecha(fecha)}</td>
                       <td>{nombreCliente}</td>
                       <td className="texto-suave">{partidas.map(({ nombre, cantidad }) => `${cantidad}× ${nombre}`).join(", ")}</td>

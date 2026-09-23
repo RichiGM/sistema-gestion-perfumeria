@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import Icono from "./Icono.js";
 
-function Encabezado({ modulo, sesion, onCerrarSesion }) {
+function Encabezado({ modulos, moduloActivo, onCambiar, sesion, onCerrarSesion, pendientes }) {
   const [ahora, setAhora] = useState(new Date());
   const [enLinea, setEnLinea] = useState(navigator.onLine);
 
@@ -21,43 +20,49 @@ function Encabezado({ modulo, sesion, onCerrarSesion }) {
     };
   }, []);
 
-  const { titulo, descripcion } = modulo;
   const { nombre, rol } = sesion;
-  const iniciales = nombre
-    .split(" ")
-    .map((palabra) => palabra[0])
-    .slice(0, 2)
-    .join("");
 
   return (
-    <header className="encabezado">
-      <div>
-        <h1 className="encabezado__titulo">{titulo}</h1>
-        <p className="texto-suave">{descripcion}</p>
+    <header>
+      <div className="encabezado">
+        <div className="encabezado__fila">
+          <div className="marca">
+            <img src="/icons/icon-192.svg" alt="" />
+            Aroma
+          </div>
+
+          <nav className="menu">
+            {modulos.map(({ id, titulo }) => (
+              <button key={id} className={moduloActivo === id ? "menu--activo" : ""} onClick={() => onCambiar(id)}>
+                {titulo}
+              </button>
+            ))}
+          </nav>
+
+          <div className="usuario">
+            <span className="usuario__nombre">
+              {nombre} ({rol})
+            </span>
+            <button onClick={onCerrarSesion}>Salir</button>
+          </div>
+        </div>
       </div>
 
-      <div className="encabezado__acciones">
-        <span className={`estado-red ${enLinea ? "" : "estado-red--offline"}`}>
-          <span className="estado-red__punto" />
-          {enLinea ? "En línea" : "Sin conexión"}
-        </span>
-
-        <span className="reloj">
-          <Icono nombre="reloj" tamano={16} />
-          {ahora.toLocaleDateString("es-MX", { weekday: "short", day: "numeric", month: "short" })}
-          {" · "}
-          {ahora.toLocaleTimeString("es-MX")}
-        </span>
-
-        <div className="perfil">
-          <span className="perfil__avatar">{iniciales}</span>
-          <div className="perfil__datos">
-            <strong>{nombre}</strong>
-            <small>{rol}</small>
-          </div>
-          <button className="boton-icono" onClick={onCerrarSesion} title="Cerrar sesión" aria-label="Cerrar sesión">
-            <Icono nombre="salir" tamano={18} />
-          </button>
+      <div className="barra-estado">
+        <div className="encabezado__fila">
+          <span className={enLinea ? "conexion" : "conexion conexion--sin"}>
+            {enLinea ? "● En línea" : "● Sin conexión"}
+          </span>
+          {pendientes > 0 && (
+            <span className="pendientes">
+              {pendientes} operación(es) por enviar {enLinea ? "(enviando...)" : "cuando vuelva el internet"}
+            </span>
+          )}
+          <span className="barra-estado__fecha">
+            {ahora.toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" })}
+            {" · "}
+            {ahora.toLocaleTimeString("es-MX")}
+          </span>
         </div>
       </div>
     </header>

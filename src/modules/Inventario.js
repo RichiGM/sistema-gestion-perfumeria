@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Icono from "../components/Icono.js";
 import { Indicador, Vacio } from "../components/Comunes.js";
 import { calcularMargen, formatearMoneda, multiplicar, sumar } from "../utils/calculos.js";
 
@@ -15,7 +14,7 @@ const PRODUCTO_VACIO = {
 
 const obtenerEstadoStock = ({ stock, stockMinimo }) => {
   if (stock === 0) return { etiqueta: "Agotado", clase: "etiqueta--rojo" };
-  if (stock <= stockMinimo) return { etiqueta: "Stock bajo", clase: "etiqueta--ambar" };
+  if (stock <= stockMinimo) return { etiqueta: "Stock bajo", clase: "etiqueta--amarillo" };
   return { etiqueta: "Disponible", clase: "etiqueta--verde" };
 };
 
@@ -64,9 +63,7 @@ function FormularioProducto({ producto, categorias, onGuardar, onCancelar }) {
       <form className="modal__caja" onClick={(evento) => evento.stopPropagation()} onSubmit={manejarEnvio}>
         <div className="modal__cabecera">
           <h3>{producto.id ? "Editar producto" : "Nuevo producto"}</h3>
-          <button type="button" className="boton-icono" onClick={onCancelar} aria-label="Cerrar">
-            <Icono nombre="cerrar" />
-          </button>
+          <button type="button" className="cerrar" onClick={onCancelar} aria-label="Cerrar">×</button>
         </div>
 
         <div className="rejilla-formulario">
@@ -105,17 +102,11 @@ function FormularioProducto({ producto, categorias, onGuardar, onCancelar }) {
           </label>
         </div>
 
-        {error && (
-          <div className="aviso aviso--error">
-            <Icono nombre="alerta" tamano={18} /> <span>{error}</span>
-          </div>
-        )}
+        {error && <div className="aviso aviso--error">{error}</div>}
 
         <div className="modal__acciones">
           <button type="button" className="boton boton--secundario" onClick={onCancelar}>Cancelar</button>
-          <button type="submit" className="boton boton--primario">
-            <Icono nombre="check" tamano={18} /> Guardar
-          </button>
+          <button type="submit" className="boton">Guardar</button>
         </div>
       </form>
     </div>
@@ -156,46 +147,43 @@ function Inventario({ productos, onGuardar, onEliminar }) {
   return (
     <div className="modulo">
       <div className="indicadores">
-        <Indicador icono="caja" titulo="Productos" valor={productos.length} detalle={`${categorias.length} categorías`} />
-        <Indicador icono="inventario" titulo="Unidades en stock" valor={totalUnidades} tono="azul" />
-        <Indicador icono="dinero" titulo="Valor del inventario" valor={formatearMoneda(valorInventario)} detalle="A precio de costo" tono="verde" />
+        <Indicador titulo="Productos" valor={productos.length} detalle={`${categorias.length} categorías`} />
+        <Indicador titulo="Unidades en stock" valor={totalUnidades} />
+        <Indicador titulo="Valor del inventario" valor={formatearMoneda(valorInventario)} detalle="A precio de costo" />
         <Indicador
-          icono="alerta"
           titulo="Alertas de stock"
           valor={productosStockBajo.length}
           detalle={hayAgotados ? "Hay productos agotados" : "Sin productos agotados"}
-          tono="ambar"
         />
       </div>
 
       {productosStockBajo.length > 0 && (
-        <div className="aviso aviso--ambar">
-          <Icono nombre="alerta" tamano={18} />
-          <span>
-            <strong>Reabastecer pronto: </strong>
-            {productosStockBajo.map(({ nombre, stock }) => `${nombre} (${stock})`).join(", ")}
-          </span>
+        <div className="aviso aviso--amarillo">
+          <strong>Reabastecer pronto: </strong>
+          {productosStockBajo.map(({ nombre, stock }) => `${nombre} (${stock})`).join(", ")}
         </div>
       )}
 
       <section className="tarjeta">
         <div className="barra-herramientas">
-          <div className="buscador">
-            <Icono nombre="buscar" tamano={18} />
-            <input value={busqueda} onChange={(evento) => setBusqueda(evento.target.value)} placeholder="Buscar por nombre o código..." />
-          </div>
+          <input
+            className="buscador"
+            value={busqueda}
+            onChange={(evento) => setBusqueda(evento.target.value)}
+            placeholder="Buscar por nombre o código..."
+          />
           <select className="selector" value={categoriaFiltro} onChange={(evento) => setCategoriaFiltro(evento.target.value)}>
             {["Todas", ...categorias].map((categoria) => (
               <option key={categoria}>{categoria}</option>
             ))}
           </select>
-          <button className="boton boton--primario" onClick={() => setProductoEditando({})}>
-            <Icono nombre="mas" tamano={18} /> Nuevo producto
+          <button className="boton" onClick={() => setProductoEditando({})}>
+            + Nuevo producto
           </button>
         </div>
 
         {productosFiltrados.length === 0 ? (
-          <Vacio icono="buscar" titulo="Sin resultados" texto="No hay productos que coincidan con la búsqueda." />
+          <Vacio titulo="Sin resultados" texto="No hay productos que coincidan con la búsqueda." />
         ) : (
           <div className="tabla-contenedor">
             <table className="tabla">
@@ -231,11 +219,11 @@ function Inventario({ productos, onGuardar, onEliminar }) {
                       </td>
                       <td><span className={`etiqueta ${clase}`}>{etiqueta}</span></td>
                       <td className="derecha nowrap">
-                        <button className="boton-icono" onClick={() => setProductoEditando(producto)} title="Editar" aria-label="Editar">
-                          <Icono nombre="editar" tamano={18} />
+                        <button className="boton-chico" onClick={() => setProductoEditando(producto)}>
+                          Editar
                         </button>
-                        <button className="boton-icono boton-icono--peligro" onClick={() => eliminar(producto)} title="Eliminar" aria-label="Eliminar">
-                          <Icono nombre="eliminar" tamano={18} />
+                        <button className="boton-chico boton-chico--peligro" onClick={() => eliminar(producto)}>
+                          Eliminar
                         </button>
                       </td>
                     </tr>

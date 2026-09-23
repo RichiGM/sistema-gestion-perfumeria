@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import Icono from "./Icono.js";
 import { verificarUsuario } from "../services/autenticacion.js";
 
 const MAX_INTENTOS = 3;
@@ -81,96 +80,68 @@ function Login({ onIngresar }) {
 
   return (
     <div className="login">
-      <section className="login__marca">
-        <div className="marca">
-          <img src="/icons/icon-192.svg" alt="" className="marca__logo" />
-          <span className="marca__nombre">Aroma</span>
-        </div>
-        <div className="login__mensaje">
-          <h1>Gestiona tu perfumería desde un solo lugar.</h1>
-          <p>Controla tus compras a proveedores, el inventario y las ventas del día.</p>
-          <ul className="login__lista">
-            <li><Icono nombre="compras" tamano={18} /> Registro de compras a proveedores</li>
-            <li><Icono nombre="inventario" tamano={18} /> Inventario con alertas de stock</li>
-            <li><Icono nombre="ventas" tamano={18} /> Punto de venta con descuentos e IVA</li>
-          </ul>
-        </div>
-      </section>
+      <div className="login__caja">
+        <img src="/img/portada.jpg" alt="Frascos de perfume" className="login__foto" />
 
-      <section className="login__panel">
         <form className="login__formulario" onSubmit={manejarEnvio}>
-          <div className="marca marca--movil">
-            <img src="/icons/icon-192.svg" alt="" className="marca__logo" />
-            <span className="marca__nombre">Aroma</span>
+          <div>
+            <h1 className="login__titulo">Perfumería Aroma</h1>
+            <p className="texto-suave">Sistema de compras, inventario y ventas</p>
           </div>
-          <h2>Iniciar sesión</h2>
-          <p className="texto-suave">Ingresa tus credenciales para continuar</p>
 
           <label className="campo">
-            <span>Usuario</span>
-            <div className="campo__control">
-              <Icono nombre="usuario" tamano={18} />
-              <input
-                type="text"
-                value={usuario}
-                onChange={(evento) => setUsuario(evento.target.value)}
-                placeholder="Ej. admin"
-                autoComplete="username"
-                disabled={bloqueado}
-              />
-            </div>
+            Usuario
+            <input
+              type="text"
+              value={usuario}
+              onChange={(evento) => setUsuario(evento.target.value)}
+              autoComplete="username"
+              disabled={bloqueado}
+            />
           </label>
 
           <label className="campo">
-            <span>Contraseña</span>
-            <div className="campo__control">
-              <Icono nombre="candado" tamano={18} />
-              <input
-                type="password"
-                value={password}
-                onChange={(evento) => setPassword(evento.target.value)}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                disabled={bloqueado}
-              />
-            </div>
+            Contraseña
+            <input
+              type="password"
+              value={password}
+              onChange={(evento) => setPassword(evento.target.value)}
+              autoComplete="current-password"
+              disabled={bloqueado}
+            />
           </label>
 
           {error && (
             <div className="aviso aviso--error">
-              <Icono nombre="alerta" tamano={18} />
-              <span>
-                {error}
-                {bloqueado && ` Intenta de nuevo en ${tiempoBloqueo} s.`}
-              </span>
+              {error}
+              {bloqueado && ` Intenta de nuevo en ${tiempoBloqueo} s.`}
             </div>
           )}
 
-          <button type="submit" className="boton boton--primario boton--bloque" disabled={verificando || bloqueado}>
-            {verificando ? (
-              <>
-                <span className="spinner" /> Verificando usuario...
-              </>
-            ) : bloqueado ? (
-              `Bloqueado (${tiempoBloqueo})`
-            ) : (
-              "Ingresar"
-            )}
+          <button type="submit" className="boton boton--bloque" disabled={verificando || bloqueado}>
+            {verificando ? "Verificando..." : bloqueado ? `Bloqueado (${tiempoBloqueo})` : "Entrar"}
           </button>
 
           <div className="login__demo">
-            <span className="texto-suave">Cuentas de prueba</span>
-            <div className="login__demo-lista">
-              {CUENTAS_DEMO.map((cuenta) => (
-                <button type="button" key={cuenta.usuario} className="chip-demo" onClick={() => usarCuentaDemo(cuenta)}>
-                  <strong>{cuenta.usuario}</strong>
-                  <span>{cuenta.password} · {cuenta.rol}</span>
-                </button>
-              ))}
-            </div>
+            <span className="texto-suave">Usuarios de prueba (clic para llenar):</span>
+            <table>
+              <tbody>
+                {CUENTAS_DEMO.map((cuenta) => (
+                  <tr key={cuenta.usuario}>
+                    <td>
+                      <button type="button" className="enlace" onClick={() => usarCuentaDemo(cuenta)}>
+                        {cuenta.usuario}
+                      </button>
+                    </td>
+                    <td>{cuenta.password}</td>
+                    <td className="texto-suave">{cuenta.rol}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </form>
-      </section>
+      </div>
     </div>
   );
 }

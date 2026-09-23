@@ -29,9 +29,28 @@ Usuarios de prueba:
 ## Progressive Web App
 
 - `public/manifest.webmanifest`: nombre, colores, modo `standalone` e íconos (se puede instalar).
-- `public/service-worker.js`: guarda la app en caché al instalarse, borra cachés viejos al activarse y responde sin conexión.
+- `public/service-worker.js`:
+  - Guarda la app (HTML, JS, CSS, íconos e imágenes) en caché al instalarse y borra cachés viejos al activarse, así la app abre **sin internet**.
+  - **Cola sin conexión**: cada venta, compra y cambio de producto se envía con `POST /api/operaciones`. Si no hay internet, el Service Worker la guarda en **IndexedDB** y responde `202` para que la app siga funcionando.
+  - Cuando regresa la conexión la cola se envía sola: con **Background Sync** (evento `sync`) en Chrome/Edge, y con el evento `online` de la página (mensaje `sincronizar`) en los demás navegadores.
+- `src/services/sincronizacion.js`: envía las operaciones y escucha los mensajes del Service Worker.
 - `src/main.js`: registra el Service Worker.
-- En el encabezado se muestra si hay conexión (eventos `online` / `offline`) y en la barra lateral aparece **Instalar aplicación** cuando el navegador lo permite.
+- En la barra de estado se ve si hay conexión (eventos `online` / `offline`) y cuántas operaciones faltan por enviar. Al sincronizar aparece un aviso. Abajo aparece **Instalar aplicación** cuando el navegador lo permite.
+
+### Servidor de prueba
+
+`vite.config.js` incluye un pequeño servidor (funciona con `npm run dev` y `npm run preview`) que recibe las operaciones en `/api/operaciones` y las guarda en `servidor-operaciones.json`. Abre `http://localhost:4173/api/operaciones` para ver lo que llegó.
+
+### Cómo probar el modo sin conexión
+
+1. `npm run build` y `npm run preview`, entra a la app y recarga una vez.
+2. En DevTools → Application → Service Workers marca **Offline** (o detén el servidor).
+3. Registra una venta o compra: aparece "Sin conexión: se guardó y se enviará…" y el contador de pendientes.
+4. Quita **Offline** (o vuelve a iniciar el servidor): la cola se envía y aparece "Conexión restablecida: se enviaron N operación(es)".
+
+## Imágenes
+
+Las fotos de `public/img/` se descargaron de [Unsplash](https://unsplash.com) (licencia libre de Unsplash) y se guardan en el repositorio para que funcionen sin internet.
 
 ## Conceptos de la carpeta `prueba 1` y dónde se usan
 
@@ -49,14 +68,15 @@ Usuarios de prueba:
 ```
 public/
   manifest.webmanifest
-  service-worker.js
+  service-worker.js       caché + cola de operaciones sin conexión
   icons/
+  img/                    fotos de la portada y de las categorías
 src/
   main.js                 registro del Service Worker
   App.js                  estado global, sesión y navegación entre módulos
-  components/             Login, BarraLateral, Encabezado, Icono, Comunes
+  components/             Login, Encabezado (menú y barra de estado), Comunes
   modules/                Inventario, Compras, Ventas
-  services/               autenticacion (Promise), almacenamiento (localStorage)
+  services/               autenticacion (Promise), almacenamiento (localStorage), sincronizacion (envío al servidor)
   data/datosIniciales.js  usuarios, proveedores, productos y operaciones de ejemplo
   utils/calculos.js       funciones flecha de cálculo
 ```
